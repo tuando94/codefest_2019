@@ -1,14 +1,16 @@
+"use strict";
 // Precondition: You need to require socket.io.js in your html page
 // Reference link https://socket.io
 // <script src="socket.io.js"></script>
 
-$(document).ready(function() {
+$(document).ready(function () {
   // Connect to API App server
   let socket = io.connect(SERVER, {
     reconnect: true,
     transports: ["websocket"]
   });
   let timeout = null;
+  let interval = null;
   let cacheSTEP = null;
   // LISTEN SOCKET.IO EVENTS
 
@@ -18,7 +20,7 @@ $(document).ready(function() {
     document.getElementById("socket-status").innerHTML = "Connected";
     console.log("[Socket] connected to server");
     // API-1a
-    socket.emit(JOIN_GAME, { game_id: GAME_ID, player_id: PLAYER_ID });
+    socket.emit(JOIN_GAME, {game_id: GAME_ID, player_id: PLAYER_ID});
   });
 
   socket.on(DISCONNECT, () => {
@@ -52,6 +54,10 @@ $(document).ready(function() {
   socket.on(JOIN_GAME, res => {
     console.log("[Socket] join-game responsed", res);
     document.getElementById("joingame-status").innerHTML = "ON";
+    interval = setInterval(function () {
+      console.log("*****Up join game*****");
+      socket.emit(DRIVE_PLAYER, {direction: "3"});
+    },1000);
   });
 
   //API-2
@@ -59,8 +65,12 @@ $(document).ready(function() {
     console.info("> ticktack");
     console.log("[Socket] ticktack-player responsed, map_info: ", res.map_info);
     document.getElementById("ticktack-status").innerHTML = "ON";
+    if(interval != null){
+      clearInterval(interval);
+      interval = null;
+    }
     if (cacheSTEP == null) {
-      // getSolution(res.map_info);
+      getSolution(res.map_info);
     }
   });
 
@@ -70,43 +80,43 @@ $(document).ready(function() {
   //API-3b
   socket.on(DRIVE_PLAYER, res => {
     console.log("[Socket] drive-player responsed, res: ", res);
-    if (res.player_id == PLAYER_ID && res.direction == cacheSTEP) {
+    if (res.player_id === PLAYER_ID && res.direction === cacheSTEP) {
       cacheSTEP = null;
     }
   });
 
-  $("#up").click(function() {
-    socket.emit(DRIVE_PLAYER, { direction: "3" });
+  $("#up").click(function () {
+    socket.emit(DRIVE_PLAYER, {direction: "3"});
   });
-  $("#down").click(function() {
-    socket.emit(DRIVE_PLAYER, { direction: "4" });
+  $("#down").click(function () {
+    socket.emit(DRIVE_PLAYER, {direction: "4"});
   });
-  $("#left").click(function() {
-    socket.emit(DRIVE_PLAYER, { direction: "1" });
+  $("#left").click(function () {
+    socket.emit(DRIVE_PLAYER, {direction: "1"});
   });
-  $("#right").click(function() {
-    socket.emit(DRIVE_PLAYER, { direction: "2" });
+  $("#right").click(function () {
+    socket.emit(DRIVE_PLAYER, {direction: "2"});
   });
-  $("#boom").click(function() {
-    socket.emit(DRIVE_PLAYER, { direction: "b" });
+  $("#boom").click(function () {
+    socket.emit(DRIVE_PLAYER, {direction: "b"});
   });
-  $(document).keyup(function(event) {
+  $(document).keyup(function (event) {
     // console.log(event.keyCode);
     switch (event.keyCode) {
       case 38:
-        socket.emit(DRIVE_PLAYER, { direction: "3" });
+        socket.emit(DRIVE_PLAYER, {direction: "3"});
         break;
       case 40:
-        socket.emit(DRIVE_PLAYER, { direction: "4" });
+        socket.emit(DRIVE_PLAYER, {direction: "4"});
         break;
       case 39:
-        socket.emit(DRIVE_PLAYER, { direction: "2" });
+        socket.emit(DRIVE_PLAYER, {direction: "2"});
         break;
       case 37:
-        socket.emit(DRIVE_PLAYER, { direction: "1" });
+        socket.emit(DRIVE_PLAYER, {direction: "1"});
         break;
       default:
-        socket.emit(DRIVE_PLAYER, { direction: "b" });
+        socket.emit(DRIVE_PLAYER, {direction: "b"});
         break;
     }
   });
@@ -145,18 +155,18 @@ $(document).ready(function() {
     );
     console.log(`**********************STEP: ${step}*************************`);
     if (step != null) {
-      if (_bfs.getMode() == STOP) {
-        setTimeout(function() {
-          socket.emit(DRIVE_PLAYER, { direction: step });
-        }, 50);
+      if (_bfs.getMode() === STOP) {
+        setTimeout(function () {
+          socket.emit(DRIVE_PLAYER, {direction: step});
+        }, 100);
       } else {
-        socket.emit(DRIVE_PLAYER, { direction: step });
+        socket.emit(DRIVE_PLAYER, {direction: step});
       }
       cacheSTEP = step;
     } else {
       clearTimeout(timeout);
       timeout = null;
-      timeout = setTimeout(function() {
+      timeout = setTimeout(function () {
         console.log(`START TIMEOUT!`);
         let cache = _bfs.getCacheValue();
         if (cache != null) {

@@ -41,5 +41,5 @@ const DISCONNECT = "disconnect";
 const ERROR = "error";
 
 const SERVER = "https://codefest.techover.io";
-const GAME_ID = "b00e7f17-ce75-40d0-b7c4-ee3f4db9e62c";
+const GAME_ID = "62fb1084-71fe-4bc0-8d23-5b7373243df2";
 const PLAYER_ID = "player1-xxx-xxx-xxx";

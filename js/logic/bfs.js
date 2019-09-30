@@ -1,3 +1,4 @@
+"use strict";
 function Node(
   x,
   y,
@@ -13,6 +14,7 @@ function Node(
   this.spoilType = spoilType;
   this.previous = previous;
 }
+
 function BreathFirstSearch(cols, rows) {
   let open = new Queue();
   let cachePoint = null;
@@ -30,22 +32,25 @@ function BreathFirstSearch(cols, rows) {
       nodes[i][j] = new Node(j, i);
     }
   }
-  this.getMode = function (){
+  this.getMode = function () {
     return mode;
-  }
-  this.getCacheValue = function(){
+  };
+  this.getCacheValue = function () {
     return cacheValue;
   };
-  this.updateMap = function(map, listBombMap, myPower, killPower, listSpoils) {
+  this.updateMap = function (map, listBombMap, myPower, killPower, listSpoils) {
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
         nodes[i][j].value = map[i][j];
+        nodes[i][j].previous = undefined;
+        nodes[i][j].remainTime = -1;
+        nodes[i][j].spoilType = -1;
       }
     }
     this.updateMapBooms(listBombMap, myPower, killPower);
     // this.updateMapItem(listSpoils);
   };
-  this.updateMapItem = function(listSpoils) {
+  this.updateMapItem = function (listSpoils) {
     console.log(`[${mode}][updateMapItem] listSpoils: `, listSpoils);
     for (let key in listSpoils) {
       if (listSpoils.hasOwnProperty(key)) {
@@ -57,7 +62,7 @@ function BreathFirstSearch(cols, rows) {
       }
     }
   };
-  this.updateMapBooms = function(listBombMap, myPower, killPower) {
+  this.updateMapBooms = function (listBombMap, myPower, killPower) {
     console.log(`[${mode}][updateMapBooms] listBombMap: `, listBombMap);
     let listBombUpdate = [];
     let size = listBombMap.length;
@@ -80,33 +85,38 @@ function BreathFirstSearch(cols, rows) {
     for (let j = 0; j < len; j++) {
       let x = listBombUpdate[j].col;
       let y = listBombUpdate[j].row;
-      if (nodes[y][x].value == BLANK) {
-        nodes[y][x].value = BOMBB;
-        nodes[y][x].remainTime = listBombUpdate[j].remainTime;
+      if (nodes[y][x].value === BLANK) {
+        if(listBombUpdate[j].remainTime === -1){
+          nodes[y][x].value = BOMBB;
+          nodes[y][x].remainTime = listBombUpdate[j].remainTime;
+        }else{
+          nodes[y][x].value = WALL;
+          nodes[y][x].remainTime = listBombUpdate[j].remainTime;
+        }
       }
     }
   };
-  this.getMapBomb = function(bomb, myPower) {
+  this.getMapBomb = function (bomb, myPower) {
     let result = [];
     let x = bomb.col;
     let y = bomb.row;
     for (let i = 1; i <= myPower; i++) {
       if (x + i < cols - 1) {
-        result.push({ row: y, col: x + i, remainTime: 99 }); // x++
+        result.push({row: y, col: x + i, remainTime: -1}); // x++
       }
       if (x - i > 0) {
-        result.push({ row: y, col: x - i, remainTime: 99 }); // x--
+        result.push({row: y, col: x - i, remainTime: -1}); // x--
       }
       if (y + i < rows - 1) {
-        result.push({ row: y + i, col: x, remainTime: 99 }); // y++
+        result.push({row: y + i, col: x, remainTime: -1}); // y++
       }
       if (y - i > 0) {
-        result.push({ row: y - i, col: x, remainTime: 99 }); // y--
+        result.push({row: y - i, col: x, remainTime: -1}); // y--
       }
     }
     return result;
   };
-  this.isMyBomb = function(bomb) {
+  this.isMyBomb = function (bomb) {
     let size = listmyBomb.length;
     for (let i = 0; i < size; i++) {
       let myBomb = listmyBomb[i];
@@ -116,20 +126,8 @@ function BreathFirstSearch(cols, rows) {
     }
     return false;
   };
-  this.resetAllNode = function() {
-    for (let i = 0; i < rows; i++) {
-      for (let j = 0; j < cols; j++) {
-        node = nodes[i][j];
-        if (node.value == BOMBB || node.value == VALUE) {
-          node.previous = undefined;
-          node.value = BLANK;
-          node.remainTime = -1;
-        }
-      }
-    }
-  };
 
-  this.findPath = function(
+  this.findPath = function (
     start,
     map,
     listBombMap,
@@ -141,15 +139,13 @@ function BreathFirstSearch(cols, rows) {
     checkMyBombExist = false;
     if (
       cachePoint != null &&
-      (cachePoint.x != start.x || cachePoint.y != start.y)
+      (cachePoint.x !== start.x || cachePoint.y !== start.y)
     ) {
       console.log(`[${mode}]cachePoint: ${JSON.stringify(cachePoint)}`);
       return null;
     }
     if (open) {
       open.clear();
-      // reset all nodes
-      this.resetAllNode();
     } else {
       open = new Queue();
     }
@@ -195,11 +191,11 @@ function BreathFirstSearch(cols, rows) {
             console.log(`[${mode}][findPath] DONE_VALUE`);
             if (listStep.length <= 1) {
               listStep = BOMB;
-              listmyBomb.push({ row: start.y, col: start.x });
+              listmyBomb.push({row: start.y, col: start.x});
               console.log(`[${mode}]BORBSS: x: ${start.x} y: ${start.y}`);
             } else {
               listStep = `${listStep.substr(0, listStep.length - 1)}${BOMB}`;
-              listmyBomb.push({ row: solution[1].y, col: solution[1].x });
+              listmyBomb.push({row: solution[1].y, col: solution[1].x});
               console.log(
                 `[${mode}]BORBSS: x: ${solution[1].x} y: ${solution[1].y}`
               );
@@ -235,6 +231,7 @@ function BreathFirstSearch(cols, rows) {
     }
     return null;
   };
+
   // generate next states by adding neighbour nodes
   function genMove(node) {
     if (node.x < cols - 1) {
@@ -250,11 +247,12 @@ function BreathFirstSearch(cols, rows) {
       addToOpen(node.x, node.y - 1, node);
     }
   }
-  function addToOpen(x, y, previous) {
-    var node = nodes[y][x];
 
-    if (node.value == BLANK) {
-      if (mode == DONE_BOMB) {
+  function addToOpen(x, y, previous) {
+    let node = nodes[y][x];
+
+    if (node.value === BLANK) {
+      if (mode === DONE_BOMB) {
         node.value = DONE_BOMB;
       } else {
         node.value = VISITED;
@@ -264,14 +262,14 @@ function BreathFirstSearch(cols, rows) {
       // (by using the getSolution() method)
       node.previous = previous;
       open.enqueue(node);
-    } else if (node.value == BOMBB && mode == DONE_BOMB) {
+    } else if (node.value === BOMBB && mode === DONE_BOMB) {
       node.value = VISITED;
       // store the previous node
       // so that we can backtrack to find the optimum path
       // (by using the getSolution() method)
       node.previous = previous;
       open.enqueue(node);
-    } else if (node.value == ITEM) {
+    } else if (node.value === ITEM) {
       // mark this node as visited to avoid adding it multiple times
       node.value = DONE_ITEM;
       // store the previous node
@@ -279,7 +277,7 @@ function BreathFirstSearch(cols, rows) {
       // (by using the getSolution() method)
       node.previous = previous;
       open.enqueue(node);
-    } else if (node.value == VALUE && mode == DONE_VALUE) {
+    } else if (node.value === VALUE && mode === DONE_VALUE) {
       // mark this node as visited to avoid adding it multiple times
       node.value = DONE_VALUE;
       // store the previous node
@@ -289,8 +287,9 @@ function BreathFirstSearch(cols, rows) {
       open.enqueue(node);
     }
   }
+
   function getSolution(p) {
-    var nodes = [];
+    let nodes = [];
     nodes.push(p);
     while (p.previous) {
       nodes.push(p.previous);
@@ -298,6 +297,7 @@ function BreathFirstSearch(cols, rows) {
     }
     return nodes;
   }
+
   function getString(start, path) {
     let x = start.x;
     let y = start.y;
